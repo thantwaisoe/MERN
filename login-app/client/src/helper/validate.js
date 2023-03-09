@@ -1,19 +1,26 @@
 import toast from 'react-hot-toast';
+import { auth } from './helper';
 // validate login page username
 export const usernameValidate = async (values) => {
   const errors = usernameVerify({}, values);
+  if(values.username){
+    //check user exist or not
+    const {status} = await auth(values.username)
+    if(status!==200) errors.exist = toast.error('User doesnot exist')
+    
+  
+  }
   return errors;
 };
 // validate login page username
 export const passwordValidate = async (values) => {
   const errors = passwordVerify({}, values);
-  if(values.password !== values.confrim_password) {
-    errors.exit = toast.error("Password not match")
-  }
+
   return errors;
 };
 export const resetPasswordValidate = async(values) =>{
   const errors = passwordVerify({}, values);
+  if (values.confirm_password !== values.password) return errors
   return errors;
 }
 // validation from register
@@ -26,7 +33,7 @@ export const registerValidate = (values) => {
 
 };
 // validation form profile page
-export const profileValidation = (error={}, values) => {
+export const profileValidation = (values) => {
   let errors = emailVerify({}, values)
   return errors
 };
@@ -57,13 +64,11 @@ const usernameVerify = (error = {}, values) => {
 };
 // validate email
 const emailVerify = (error={}, values) => {
-  const specialChars = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
+  // const specialChars = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
   if(!values.email){
     error.email = toast.error('Email Required')
   }else if(values.email.includes(' ')){
     error.email = toast.error('Email cannot be blank')
-  }else if(!specialChars.test(values.email)){
-    error.email = toast.error('Wrong email format')
   }
   return error;
 };

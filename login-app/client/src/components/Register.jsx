@@ -1,27 +1,36 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import avatar from '../assets/profile.png';
 import styles from '../styles/Username.module.css';
-import { Toaster } from 'react-hot-toast';
+import toast,{ Toaster } from 'react-hot-toast';
 import { useFormik } from 'formik';
 import { registerValidate } from '../helper/validate';
 import { useState } from 'react';
 import convertToBase64 from '../helper/convert'
+import {registerUser} from '../helper/helper'
 
 export default function Password() {
+
+  const navigate = useNavigate()
   const [file, setFile] = useState();
   const formik = useFormik({
     initialValues: {
-      username: '',
-      email: '',
-      password: '',
+      username: 'thant123',
+      email: 'thantwaisoe456@gmail.com',
+      password: 'admin123@',
     },
     validate: registerValidate,
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async (values) => {
       values = Object.assign(values, {profile: file || ''}) //add profile key value in values object
-      console.log(values);
+      let registerPromise = registerUser(values);
+      toast.promise(registerPromise, {
+        loading: 'Creating...',
+        success: <b>Register Successful </b>,
+        error: <b>Could not Register</b>
+      })
+      registerPromise.then(() => navigate('/'))
     },
   });
   const onUpload = async (e) => {
@@ -83,3 +92,4 @@ export default function Password() {
     </div>
   );
 }
+  

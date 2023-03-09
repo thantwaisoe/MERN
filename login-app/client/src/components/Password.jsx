@@ -1,61 +1,80 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import avatar from '../assets/profile.png';
 import styles from '../styles/Username.module.css';
-import { Toaster } from 'react-hot-toast';
+import toast,{ Toaster } from 'react-hot-toast';
 import { useFormik } from 'formik';
 import { passwordValidate } from '../helper/validate';
+import { useAuthStore } from '../store/index.js';
+import useFetch from '../hook/fetchData.hook';
+import {verifyUserForLogin} from '../helper/helper'
 
 export default function Password() {
-  const formik = useFormik({
-    initialValues: {
-      password: '',
-    },
-    validate: passwordValidate,
-    validateOnBlur: false,
-    validateOnChange: false,
-    onSubmit: async (values) => {
-      console.log(values);
-    },
-  });
-  return (
-    <div className="container mx-auto">
-      <Toaster position="top-center" reverseOrder="false" />
-      <div className="flex justify-center items-center h-screen">
-        <div className={styles.glass}>
-          <div className="title flex flex-col items-center">
-            <h4 className="text-5xl font-bold">Hello Again!</h4>
-            <span className="py-4 text-xl w-2/3 text-center text-gray-500">
-              Explore More by connecting with us.
-            </span>
-          </div>
+   //get username from zustand store
+   const navigation = useNavigate()
+   const { username } = useAuthStore((state) => state.auth);
+   const [{ isLoading, apiData, serverError }] = useFetch(`/user/${username}`);
+   const formik = useFormik({
+      initialValues: {
+         password: 'admin123@',
+      },
+      validate: passwordValidate,
+      validateOnBlur: false,
+      validateOnChange: false,
+      onSubmit: async (values) => {
+         let loginPromise = verifyUserForLogin({username, password:values.password})
+         toast.promise(loginPromise, {
+            loading: 'Checking...',
+            success: <b>Login Successful</b>,
+            error: <b>Password not Match</b>
+         })
+         loginPromise.then(res => {
+            let {token} = res.data
+            localStorage.setItem('token', token)
+            navigation('/profile')
+         })
+      },
+   });
+   if(isLoading) return <h1 className='text-2xl font-bold'>isLoading</h1>
+   if(serverError) return <h1 className='text-xl text-red-500'>{serverError.message}</h1>
+   return (
+      <div className="container mx-auto">
+         <Toaster position="top-center" reverseOrder="false" />
+         <div className="flex justify-center items-center h-screen">
+            <div className={styles.glass}>
+               <div className="title flex flex-col items-center">
+                  <h4 className="text-5xl font-bold">Hello {apiData?.firstName || apiData?.username}</h4>
+                  <span className="py-4 text-xl w-2/3 text-center text-gray-500">
+                     Explore More by connecting with us.
+                  </span>
+               </div>
 
-          <form className="py-1" onSubmit={formik.handleSubmit}>
-            <div className="profile flex  justify-center py-4">
-              <img src={avatar} className={styles.profile_img} alt="avatar" />
-            </div>
+               <form className="py-1" onSubmit={formik.handleSubmit}>
+                  <div className="profile flex  justify-center py-4">
+                     <img src={apiData?.profile || avatar} className={styles.profile_img} alt="avatar" />
+                  </div>
 
-            <div className="textbox flex items-center flex-col gap-6">
-              <input
-                {...formik.getFieldProps('password')}
-                type="password"
-                className={styles.textbox}
-                placeholder="Enter Password"
-              />
-              <button className={styles.btn} type="submit">
-                Sign Up
-              </button>
-            </div>
+                  <div className="textbox flex items-center flex-col gap-6">
+                     <input
+                        {...formik.getFieldProps('password')}
+                        type="password"
+                        className={styles.textbox}
+                        placeholder="Enter Password"
+                     />
+                     <button className={styles.btn} type="submit">
+                        Sign Up
+                     </button>
+                  </div>
 
-            <div className="text-center py-4">
-              <span className="text-gray-500 px-1">Forgot Password</span>
-              <Link className="text-red-500" to="/recovery">
-                Recovery Now
-              </Link>
+                  <div className="text-center py-4">
+                     <span className="text-gray-500 px-1">Forgot Password</span>
+                     <Link className="text-red-500" to="/recovery">
+                        Recovery Now
+                     </Link>
+                  </div>
+               </form>
             </div>
-          </form>
-        </div>
+         </div>
       </div>
-    </div>
-  );
+   );
 }
